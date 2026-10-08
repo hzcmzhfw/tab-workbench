@@ -1,0 +1,3 @@
+export function safeUrl(url){try{return ['http:','https:'].includes(new URL(url).protocol);}catch{return false;}}
+export function duplicateIds(tabs){const seen=new Map(),ids=[];for(const tab of [...tabs].sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned)||Number(!!b.active)-Number(!!a.active))){if(!safeUrl(tab.url))continue;if(seen.has(tab.url)){if(!tab.pinned)ids.push(tab.id);}else seen.set(tab.url,tab.id);}return ids;}
+export function filterTools(tools,query,site,favorites){return tools.filter(t=>(site==='全部'||t.site_name===site||(site==='收藏'&&favorites.includes(t.tool_id)))&&`${t.tool_name} ${t.tool_desc}`.toLowerCase().includes(query.toLowerCase()));}
