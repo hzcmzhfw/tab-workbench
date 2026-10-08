@@ -1,1 +1,15 @@
-<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>继续使用趁手与轻办</title><link rel="stylesheet" href="style.css"><body class="handoff"><small>浏览工作台 / 内容交接</small><h1>接着处理这份内容。</h1><p id="hint"></p><textarea id="content" aria-label="待处理内容" hidden></textarea><img id="preview" alt="当前网页截图预览" hidden><div class="buttons"><button id="copy" hidden>复制内容</button><button id="download" hidden>下载截图</button><button id="open">打开工具网站 ↗</button></div><p>内容保存在本机临时存储中，不随链接发送。用完后可关闭本页。</p><output id="toast" role="status"></output><script type="module" src="handoff.js"></script></body></html>
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>继续处理 · 趁手与轻办</title><link rel="stylesheet" href="style.css"></head>
+<body class="handoff">
+  <a class="brand" href="index.html"><img src="icons/icon32.png" alt="">浏览工作台</a>
+  <small>继续使用趁手与轻办</small><h1 id="heading">接着处理这份内容</h1>
+  <p id="hint">正在读取临时内容…</p>
+  <textarea id="content" aria-label="待处理内容" hidden></textarea>
+  <div class="handoff-preview"><img id="preview" alt="网页可见区域截图" hidden></div>
+  <div class="toolbar"><label for="target">下一步工具</label><select id="target" disabled></select></div>
+  <div class="buttons"><button id="copy" hidden>复制并打开工具 ↗</button><button id="download" hidden>下载截图并打开工具 ↗</button><button id="open" disabled>只打开工具 ↗</button><button id="format" hidden>整理 JSON</button></div>
+  <p class="subtitle">内容不会通过网址自动发送。文字需在网站粘贴，图片需在网站选择下载的文件。</p>
+  <footer><a href="https://tools.hzcmzhfw.cn/" target="_blank" rel="noreferrer">趁手 · 开发工具 ↗</a> / <a href="https://qingban.hzcmzhfw.cn/" target="_blank" rel="noreferrer">轻办 · 办公生活 ↗</a></footer>
+  <output id="toast" role="status"></output>
+  <script type="module" src="handoff.js"></script>
+</body></html>

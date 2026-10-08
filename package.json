@@ -1,1 +1,21 @@
-{"name":"tab-workbench","version":"0.1.0","private":true,"type":"module","scripts":{"test":"node --test tests/*.test.js","check":"node --check extension/app.js && node --check extension/background.js && node --check extension/handoff.js","package":"python3 scripts/package_extension.py"}}
+{
+  "name": "tab-workbench",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "浏览器标签工作台与趁手、轻办工具入口",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "check": "node scripts/check_extension.mjs",
+    "verify:browser": "node scripts/verify_browser.mjs",
+    "catalog": "python3 scripts/build_catalog.py",
+    "package": "python3 scripts/package_extension.py",
+    "verify:discard": "node scripts/verify_discard.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.59.1"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

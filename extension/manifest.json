@@ -1,1 +1,14 @@
-{"manifest_version":3,"name":"浏览工作台 · 趁手与轻办","version":"0.1.0","description":"搜索与收藏趁手、轻办工具，整理标签、保存工作会话，截图和选中文字随手处理。","permissions":["tabs","storage","activeTab","contextMenus"],"background":{"service_worker":"background.js","type":"module"},"action":{"default_popup":"popup.html","default_title":"浏览工作台"},"commands":{"open-workbench":{"suggested_key":{"default":"Ctrl+Shift+K","mac":"Command+Shift+K"},"description":"打开浏览工作台"}},"content_security_policy":{"extension_pages":"script-src 'self'; object-src 'self'"}}
+{
+  "manifest_version": 3,
+  "minimum_chrome_version": "110",
+  "name": "浏览工作台 · 趁手与轻办",
+  "version": "1.0.0",
+  "description": "整理标签、保存工作会话，搜索和收藏趁手与轻办工具；选中文字、截图后继续处理开发与办公任务。",
+  "homepage_url": "https://hzcmzhfw.cn/",
+  "permissions": ["tabs", "storage", "activeTab", "contextMenus", "tabGroups"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": { "default_popup": "popup.html", "default_title": "浏览工作台", "default_icon": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" } },
+  "icons": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "commands": { "open-workbench": { "suggested_key": { "default": "Ctrl+Shift+K", "mac": "Command+Shift+K" }, "description": "打开浏览工作台" } },
+  "content_security_policy": { "extension_pages": "script-src 'self'; object-src 'self'" }
+}
