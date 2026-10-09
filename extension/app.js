@@ -1,3 +1,4 @@
+import { createBookmarkManager } from './bookmarks.js';
 import { BACKUP_VERSION, duplicateIds, filterTools, safeUrl } from './core.js';
 import { readData, mutate } from './storage.js';
 import { fetchTabs, fetchGroups, snapshots, focusTab, restoreTabs, captureCurrent } from './browser.js';
@@ -6,9 +7,10 @@ const $ = id => document.getElementById(id);
 const isPopup = document.body.classList.contains('popup');
 const catalog = await (await fetch('catalog.json')).json();
 let data = await readData();
-let view = 'tools', site = '全部', preview = false, savedFilter = '待阅读', collection = '全部收藏夹';
+let view = 'tabs', site = '全部', preview = false, savedFilter = '待阅读', collection = '全部收藏夹';
 let tabs = [], groups = new Map(), selected = new Set(), visibleTabs = [], visibleSaved = [], closed = [];
-let toastTimer, refreshTimer;
+let toastTimer, refreshTimer, bookmarkTimer;
+const bookmarks = createBookmarkManager({ element, button, askText, askConfirm, toast, rerender: render });
 
 function element(tag, className, text) {
   const node = document.createElement(tag);
@@ -149,16 +151,20 @@ function renderTabs() {
     sections.get(key).tabs.push(tab);
   }
   for (const group of sections.values()) {
+    const panel = element('section', 'tab-card');
     const heading = element('h2', 'group', `${group.title} · ${group.tabs.length}`);
     heading.append(button('选择本组', () => {
       const all = group.tabs.every(tab => selected.has(tab.id));
       for (const tab of group.tabs) { if (all) selected.delete(tab.id); else selected.add(tab.id); }
       render();
     }, 'group-select'));
-    $('list').append(heading);
+    panel.append(heading); $('list').append(panel);
     for (const tab of group.tabs) {
       const labels = [tab.pinned ? '已固定' : '', tab.active ? '活动标签' : '', tab.discarded ? '已休眠' : '', tab.audible ? '正在播放声音' : ''].filter(Boolean);
-      const item = row(tab.title || tab.url, `${tab.url} · ${labels.join(' / ') || `窗口 ${tab.windowId}`}`, '网页');
+      const item = row(tab.title || tab.url, `${new URL(tab.url).hostname} · ${labels.join(' / ') || '点击标题切换标签'}`, new URL(tab.url).hostname.slice(0, 1).toUpperCase());
+      item.node.classList.toggle('selected', selected.has(tab.id));
+      item.node.classList.toggle('active-tab', !!tab.active);
+      item.node.title = tab.url;
       item.node.prepend(checkbox(`选择 ${tab.title || tab.url}`, selected.has(tab.id), checked => {
         if (checked) selected.add(tab.id); else selected.delete(tab.id); render();
       }));
@@ -168,7 +174,7 @@ function renderTabs() {
       }));
       item.actions.append(button('稍后看', () => saveLater([tab], false)));
       item.actions.append(button('关闭', () => closeTabs([tab]), 'danger'));
-      item.node.append(item.actions); $('list').append(item.node);
+      item.node.append(item.actions); panel.append(item.node);
     }
   }
 }
@@ -317,6 +323,7 @@ async function discardTabs(items) {
 }
 function renderActions() {
   if (isPopup) return;
+  if (view === 'bookmarks') { bookmarks.renderActions(); return; }
   const actions = $('actions'); actions.replaceChildren(); actions.hidden = view === 'tools' || view === 'settings';
   if (view === 'tabs') {
     actions.append(selector([['domain', '按域名'], ['window', '按窗口'], ['group', '按标签组']], data.settings_data.tab_view, async value => {
@@ -330,6 +337,7 @@ function renderActions() {
       }, 'danger'));
     } else {
       actions.append(button('选择当前列表', selectVisible));
+      if (selected.size) {
       actions.append(selectionAction('保存所选', items => saveLater(items, false)));
       actions.append(selectionAction('保存并关闭', items => saveLater(items, true)));
       actions.append(selectionAction('关闭所选', closeTabs, 'danger'));
@@ -349,6 +357,8 @@ function renderActions() {
         for (const tab of items) await chrome.tabs.move(tab.id, { windowId: target, index: -1 });
         selected.clear(); await refreshTabs(); render(); toast('标签已移动');
       }, '移动标签到窗口'));
+      actions.append(button('取消选择', () => { selected.clear(); render(); }));
+      }
     }
     actions.append(button('保存当前窗口会话', async () => { const win = await chrome.windows.getCurrent(); await refreshTabs(); await saveSession(tabs.filter(tab => tab.windowId === win.id)); }));
     actions.append(button('保存全部窗口会话', async () => { await refreshTabs(); await saveSession(tabs); }));
@@ -383,7 +393,7 @@ function settingsSection(title, text) {
   $('list').append(section); return section;
 }
 function renderSettings() {
-  $('count').textContent = '浏览工作台 1.0.0 · 本地数据与偏好';
+  $('count').textContent = '浏览工作台 1.2.0 · 本地数据与偏好';
   const theme = settingsSection('外观', '跟随系统，或固定使用浅色、深色主题。');
   theme.append(selector([['system', '跟随系统'], ['light', '浅色'], ['dark', '深色']], data.settings_data.theme_name, async value => {
     await update('settings_update', { theme_name: value }); render();
@@ -420,6 +430,7 @@ function renderSettings() {
   });
   actions.append(button('选择备份导入', () => input.click()), input); backup.append(actions);
   settingsSection('支持的浏览器', '基于 Manifest V3 与标准 Chrome 扩展 API，目标为 Chrome / Chromium 110+ 及对应新版 Edge、Brave、Vivaldi、Opera。浏览器可能限制加载未上架扩展；标签组或休眠缺失时会保留基础功能并给出提示。');
+  settingsSection('Chrome 原生书签', '书签管理直接读写 Chrome 书签，修改会同步到浏览器及已启用的 Chrome 同步。插件数据备份不包含原生书签，请在书签管理页单独导出。');
   const privacy = settingsSection('权限与隐私', '标签、收藏和会话保存在当前浏览器。仅在点击插件图标后截图，不自动上传输入、不使用统计或广告脚本。两站页面按正常网站访问加载，遵循各自隐私说明。');
   const links = element('div', 'toolbar');
   for (const [name, url] of [['了解趁手', 'https://tools.hzcmzhfw.cn/'], ['了解轻办', 'https://qingban.hzcmzhfw.cn/'], ['源码与反馈', 'https://gitee.com/hzcmzhfw/tab-workbench']]) {
@@ -429,14 +440,21 @@ function renderSettings() {
 }
 function render() {
   applyTheme(); $('list').replaceChildren();
+  document.body.dataset.view = view;
+  if ($('overview')) {
+    $('overview').hidden = view !== 'tabs';
+    $('overview').replaceChildren();
+    for (const text of [`${tabs.length} 个标签`, `${new Set(tabs.map(tab => tab.windowId)).size} 个窗口`, `${duplicateIds(tabs, data.settings_data.is_ignore_tracking).length} 个重复项`, `${tabs.filter(tab => tab.discarded).length} 个已休眠`]) $('overview').append(element('span', '', text));
+  }
   if (view === 'tools') renderTools();
   else if (view === 'tabs') renderTabs();
+  else if (view === 'bookmarks') bookmarks.render();
   else if (view === 'saved') renderSaved();
   else if (view === 'sessions') renderSessions();
   else renderSettings();
   renderActions();
   if (!$('list').children.length) {
-    const text = view === 'saved' ? '还没有保存页面。在“正在打开”中选择标签并保存，或在网页点击插件的“保存当前页面”。'
+    const text = view === 'saved' ? '还没有保存页面。在“标签管理”中选择标签并保存，或在网页点击插件的“保存当前页面”。'
       : view === 'sessions' ? '保存当前窗口或全部窗口，下次继续工作。'
         : site === '收藏' ? '还没有收藏工具。点击工具右侧的 ☆，常用入口就在这里。'
           : site === '最近' ? '从插件打开工具后，会在这里留下快捷入口。'
@@ -446,11 +464,12 @@ function render() {
 }
 async function changeView(next) {
   view = next; selected.clear(); preview = false; $('search').value = '';
-  const headings = { tools: ['TOOLS / 趁手与轻办', '工具中心'], tabs: ['TABS / 浏览器', '正在打开'], saved: ['READ LATER / 本地收藏', '稍后再看'], sessions: ['SESSIONS / 工作现场', '工作会话'], settings: ['SETTINGS / 数据管理', '设置与备份'] };
-  $('eyebrow').textContent = headings[view][0]; $('heading').textContent = headings[view][1];
-  $('search').placeholder = view === 'tools' ? '搜索 JSON、图片压缩、PDF 合并…' : '搜索标题、网址或备注…';
+  const headings = { bookmarks: ['BOOKMARKS / CHROME', '书签管理'], tools: ['TOOLS / 趁手与轻办', '工具中心'], tabs: ['WORKSPACE / 浏览工作台', '标签管理'], saved: ['READ LATER / 本地收藏', '稍后再看'], sessions: ['SESSIONS / 工作现场', '工作会话'], settings: ['SETTINGS / 数据管理', '设置与备份'] };
+  if ($('eyebrow')) $('eyebrow').textContent = headings[view][0]; if ($('heading')) $('heading').textContent = headings[view][1];
+  $('search').placeholder = view === 'bookmarks' ? '搜索所有书签的名称或网址…' : view === 'tools' ? '搜索 JSON、图片压缩、PDF 合并…' : view === 'tabs' ? '搜索标签标题或网址…' : '搜索标题、网址或备注…';
   $('search').hidden = view === 'settings'; $('filters').hidden = view !== 'tools';
   document.querySelectorAll('[data-view]').forEach(node => node.classList.toggle('chosen', node.dataset.view === view));
+  if (view === 'bookmarks') await bookmarks.refresh();
   if (view === 'tabs' || view === 'sessions') await refreshTabs();
   render();
 }
@@ -498,6 +517,7 @@ if (chrome.tabGroups) {
 chrome.storage.onChanged.addListener(async (changes, area) => {
   if (area !== 'local') return;
   data = await readData(); applyTheme();
+  if (view === 'bookmarks' && (changes.bookmark_history_list || changes.bookmark_tree)) await bookmarks.refresh();
   if (view !== 'settings' && !document.querySelector('dialog[open]')) render();
 });
 document.addEventListener('keydown', event => {
@@ -505,4 +525,15 @@ document.addEventListener('keydown', event => {
     event.preventDefault(); $('search').focus();
   }
 });
-await refreshTabs(); render();
+await refreshTabs(); await changeView(new URLSearchParams(location.search).get('view') === 'tools' ? 'tools' : 'tabs');
+
+if (chrome.bookmarks) {
+  const syncBookmarks = () => {
+    clearTimeout(bookmarkTimer);
+    bookmarkTimer = setTimeout(async () => {
+      if (view !== 'bookmarks' || document.querySelector('dialog[open]')) return;
+      try { await bookmarks.refresh(); render(); } catch (error) { toast(error.message); }
+    }, 180);
+  };
+  for (const event of [chrome.bookmarks.onCreated, chrome.bookmarks.onRemoved, chrome.bookmarks.onChanged, chrome.bookmarks.onMoved, chrome.bookmarks.onChildrenReordered, chrome.bookmarks.onImportEnded]) event.addListener(syncBookmarks);
+}

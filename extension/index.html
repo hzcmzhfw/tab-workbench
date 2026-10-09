@@ -1,27 +1,29 @@
 <!doctype html>
 <html lang="zh-CN">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>浏览工作台 · 趁手与轻办</title><link rel="stylesheet" href="style.css"></head>
-<body>
+<body class="workbench">
   <aside>
     <a class="brand" href="index.html"><img src="icons/icon32.png" alt="">浏览工作台</a>
-    <p class="subtitle">开发趁手，日常轻办。</p>
+    <p class="subtitle">你的浏览，井然有序。</p>
     <nav aria-label="工作台导航">
-      <button data-view="tools" class="chosen">工具中心</button>
-      <button data-view="tabs">正在打开</button>
-      <button data-view="saved">稍后再看</button>
-      <button data-view="sessions">工作会话</button>
+      <button data-view="tabs" class="chosen"><span>▤</span> 标签管理</button>
+      <button data-view="bookmarks">书签管理</button>
+      <button data-view="saved"><span>◷</span> 稍后再看</button>
+      <button data-view="sessions"><span>▣</span> 工作会话</button>
+      <button data-view="tools"><span>⌘</span> 工具中心</button>
       <button data-view="settings">设置与备份</button>
     </nav>
     <div class="sites"><a href="https://tools.hzcmzhfw.cn/" target="_blank" rel="noreferrer">趁手 · 开发工具 ↗</a><a href="https://qingban.hzcmzhfw.cn/" target="_blank" rel="noreferrer">轻办 · 办公生活 ↗</a></div>
   </aside>
   <main>
-    <header><div><small id="eyebrow">TOOLS / 趁手与轻办</small><h1 id="heading">工具中心</h1></div><span class="local-label">本地保存 · 无需账号</span></header>
-    <label class="search-label"><span class="sr-only">搜索工具或标签</span><input id="search" type="search" placeholder="搜索 JSON、图片压缩、PDF 合并…" autocomplete="off"></label>
+    <header><div><small id="eyebrow">WORKSPACE / 浏览工作台</small><h1 id="heading">标签管理</h1></div><span class="local-label">● 本地工作空间</span></header>
+    <label class="search-label"><span class="sr-only">搜索工具或标签</span><input id="search" type="search" placeholder="搜索标签标题或网址…" autocomplete="off"></label>
     <div id="filters" class="toolbar" aria-label="工具筛选"><button class="chosen" data-site="全部">全部工具</button><button data-site="趁手">趁手 · 开发</button><button data-site="轻办">轻办 · 办公生活</button><button data-site="收藏">我的收藏</button><button data-site="最近">最近使用</button></div>
     <div id="actions" class="toolbar" hidden></div>
+    <div id="overview" class="overview" aria-label="浏览状态"></div>
     <p id="count" aria-live="polite"></p>
     <section id="list" aria-label="内容列表"></section>
-    <footer>通过插件发现工具，进入趁手或轻办继续处理。网页内容不会自动上传。</footer>
+    <footer><span>按 / 快速搜索 · 点击标题切换标签</span><span>数据保存在此浏览器</span></footer>
     <output id="toast" role="status"></output>
   </main>
   <script type="module" src="app.js"></script>

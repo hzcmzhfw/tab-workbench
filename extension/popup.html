@@ -1,12 +1,13 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><title>浏览工作台</title><link rel="stylesheet" href="style.css"></head>
 <body class="popup"><main>
-  <header><a class="brand" href="index.html" target="_blank"><img src="icons/icon32.png" alt="">浏览工作台</a><button id="dashboard">标签管理 ↗</button></header>
-  <p class="subtitle">开发趁手，日常轻办。</p>
-  <label><span class="sr-only">搜索工具</span><input id="search" type="search" placeholder="搜索两站工具" autocomplete="off"></label>
+  <header><a class="brand" href="index.html" target="_blank"><img src="icons/icon32.png" alt="">浏览工作台</a><button id="dashboard">打开工作台 ↗</button></header>
+  <p class="subtitle">正在打开的标签，随手整理。</p>
+  <label><span class="sr-only">搜索标签</span><input id="search" type="search" placeholder="搜索标签标题或网址" autocomplete="off"></label>
+  <div class="popup-nav"><button data-view="tabs" class="chosen">标签</button><button data-view="tools">工具</button></div>
   <div id="filters" class="toolbar"><button class="chosen" data-site="全部">全部</button><button data-site="趁手">趁手</button><button data-site="轻办">轻办</button><button data-site="收藏">收藏</button><button data-site="最近">最近</button></div>
-  <p id="count" aria-live="polite"></p><section id="list" aria-label="工具列表"></section>
+  <p id="count" aria-live="polite"></p><section id="list" aria-label="标签与工具列表"></section>
   <div class="toolbar"><button id="capture">截取当前网页</button><button id="save-current">保存当前页面</button></div>
-  <footer><a href="https://tools.hzcmzhfw.cn/" target="_blank" rel="noreferrer">趁手 ↗</a><span> / </span><a href="https://qingban.hzcmzhfw.cn/" target="_blank" rel="noreferrer">轻办 ↗</a><p>截图后可在轻办标注、打码和压缩。</p></footer>
+  <footer><a href="https://tools.hzcmzhfw.cn/" target="_blank" rel="noreferrer">趁手 ↗</a><span> / </span><a href="https://qingban.hzcmzhfw.cn/" target="_blank" rel="noreferrer">轻办 ↗</a><p>开发与办公工具，需要时就在这里。</p></footer>
   <output id="toast" role="status"></output>
 </main><script type="module" src="app.js"></script></body></html>

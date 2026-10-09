@@ -4,9 +4,11 @@
 
 浏览工作台是一款从零开发的 Chromium 浏览器扩展。把标签搜索、稍后再看和工作会话放在一个工作台里，同时连接 **趁手** 与 **轻办**：选中文字、截取网页后，进入对应工具继续处理。
 
-[进入趁手 · 开发工具](https://tools.hzcmzhfw.cn/) ｜ [进入轻办 · 办公与生活工具](https://qingban.hzcmzhfw.cn/) ｜ [两站导航](https://hzcmzhfw.cn/) ｜ [下载 1.0.0 插件 ZIP](releases/tab-workbench-1.0.0.zip)
+[进入趁手 · 开发工具](https://tools.hzcmzhfw.cn/) ｜ [进入轻办 · 办公与生活工具](https://qingban.hzcmzhfw.cn/) ｜ [两站导航](https://hzcmzhfw.cn/) ｜ [下载 1.2.0 插件 ZIP](releases/tab-workbench-1.2.0.zip)
 
-![浏览工作台工具中心](docs/screenshots/tools.png)
+![浏览工作台标签管理](docs/screenshots/tab-workspace-1.1.png)
+
+默认打开标签管理，插件弹窗也优先显示标签。工具中心作为辅助入口保留在侧栏与弹窗的「工具」页。选中标签后显示批量保存、关闭、休眠、固定、静音与移动操作。
 
 ## 趁手与轻办，分别能做什么？
 
@@ -23,7 +25,7 @@
 
 ### 方法一：下载插件包
 
-1. 下载 [tab-workbench-1.0.0.zip](releases/tab-workbench-1.0.0.zip)，在电脑上解压。
+1. 下载 [tab-workbench-1.2.0.zip](releases/tab-workbench-1.2.0.zip)，在电脑上解压。
 2. 打开浏览器扩展管理页，开启 **开发者模式**。
 3. 点击 **加载已解压的扩展程序**，选择刚才解压后含 `manifest.json` 的文件夹。
 4. 在浏览器扩展菜单中固定 **浏览工作台**，点击图标开始使用。
@@ -69,7 +71,7 @@ cd tab-workbench
 
 ### 2. 管理正在打开的标签
 
-点击弹窗的 **标签管理**，或使用快捷键打开工作台，进入「正在打开」。
+点击弹窗的 **打开工作台**，或使用快捷键打开工作台，默认进入「标签管理」。
 
 - 搜索标题和网址，按 **域名 / 窗口 / Chrome 标签组** 查看。
 - 点击页面标题切换到对应标签和窗口。
@@ -83,7 +85,7 @@ cd tab-workbench
 
 ### 3. 保存稍后再看的页面
 
-在普通网页的插件弹窗点击 **保存当前页面**，或在「正在打开」中选择标签并点击 **保存所选 / 保存并关闭**。
+在普通网页的插件弹窗点击 **保存当前页面**，或在「标签管理」中选择标签并点击 **保存所选 / 保存并关闭**。
 
 输入收藏夹名称即可保存。相同收藏夹内按完整网址去重；支持标题、网址、备注搜索，移动收藏夹、阅读归档、批量打开和删除。批量打开会跳过已打开网址。
 
@@ -143,6 +145,25 @@ cd tab-workbench
 
 快捷键冲突时，在各浏览器扩展快捷键设置页修改。
 
+## Chrome 书签管理与历史快照
+
+在顶部打开 **书签管理**。左侧选择 Chrome 原生文件夹，搜索框可搜索所有文件夹中的书签。
+
+- 添加书签、创建文件夹、修改名称与网址、移动到其他文件夹。
+- 删除前确认；非空文件夹需要先整理内容，最近一次删除可在本页撤销。
+- **查找重复书签**比较完整网址，列出所有副本，由用户决定保留哪一项。
+- 单独导出、导入书签 JSON。导入新建一个文件夹，不覆盖现有书签；这是插件 JSON 格式，Chrome 自带的 HTML 文件暂不支持。
+- **历史快照**保留最近 **20 次操作前**的完整目录、名称、网址与顺序。支持预览和一键恢复，页面关闭或浏览器重启后仍然保留。
+- 插件内一次编辑、移动、删除、创建或整批导入计为一次操作；Chrome 外部短时间连续修改合并为一个快照。
+- 恢复前自动保存当前状态；可以再从历史恢复到恢复前的版本。恢复先暂存目标内容，再替换可编辑书签；Chrome 系统目录和组织管理书签不会直接修改。恢复会重建书签节点，Chrome 内部 ID 和添加时间可能改变。
+
+修改直接写入 Chrome；开启 Chrome 同步时会由 Chrome 同步到其他设备。历史在本机保存，不随 Chrome 账号同步。卸载插件会清除历史，重要版本请导出备份。原有「稍后再看」及工具收藏独立保存。
+
+从旧版本升级：在 `chrome://extensions` 找到浏览工作台，点击重新加载，并按 Chrome 提示启用新增的书签权限。本版新增 `bookmarks` 与 `unlimitedStorage`（为 20 份本地快照提供存储空间）。
+
+![Chrome 书签管理](docs/screenshots/bookmarks-1.2.png)
+![最近 20 次书签操作历史](docs/screenshots/bookmark-history-1.2.png)
+
 ## 权限与隐私
 
 | 权限 | 用途 |
@@ -152,6 +173,8 @@ cd tab-workbench
 | `activeTab` | 用户点击插件图标后截取当前网页可见区域 |
 | `contextMenus` | 文字、图片和网页右键入口 |
 | `tabGroups` | 读取并恢复标签组名称、颜色与折叠状态 |
+| `bookmarks` | 读取、搜索、整理和恢复 Chrome 原生书签 |
+| `unlimitedStorage` | 在本机保留最近 20 份完整书签快照 |
 
 不申请全站网页读取权限，不注入内容脚本，不默认接管新标签页，无账号、遥测、广告脚本或自动上传。普通标签管理排除无痕窗口；无痕窗口中的右键交接不保存内容。
 
@@ -166,6 +189,7 @@ npm ci
 npx playwright install chromium
 npm test
 npm run check
+npm run verify:bookmarks
 npm run verify:browser
 npm run verify:discard
 npm run package
@@ -176,10 +200,11 @@ npm run package
 ```sh
 npm run catalog
 npm run check
+npm run verify:bookmarks
 npm run package
 ```
 
-`dist/tab-workbench-1.0.0.zip` 为打包结果，已发布包在 `releases/`。修改版本时同步更新 Manifest、package.json、README 下载链接，并将新 ZIP 复制到 `releases/`。
+`dist/tab-workbench-1.2.0.zip` 为打包结果，已发布包在 `releases/`。修改版本时同步更新 Manifest、package.json、README 下载链接，并将新 ZIP 复制到 `releases/`。
 
 ```text
 extension/        可直接加载的扩展

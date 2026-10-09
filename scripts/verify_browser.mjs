@@ -43,6 +43,8 @@ try {
   await context.route(/https:\/\/(tools|qingban)\.hzcmzhfw\.cn\//, route => route.request().resourceType() === 'document' ? route.fulfill({ contentType: 'text/html', body: '<title>工具目标页</title><h1>正确的工具网址</h1>' }) : route.continue());
   const page = await context.newPage(); page.on('dialog', dialog => dialog.accept(dialog.type() === 'prompt' ? '验收工作现场' : undefined));
   await page.goto(`${root}index.html`);
+  assert.equal(await page.locator('#heading').innerText(), '标签管理');
+  await page.locator('[data-view="tools"]').click();
   await page.locator('.row').first().waitFor();
   assert.equal(await page.locator('.row').count(), catalog.length);
   await page.locator('#search').fill('JSON'); assert.ok(await page.locator('.row').count() > 10);

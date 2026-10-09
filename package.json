@@ -1,6 +1,6 @@
 {
   "name": "tab-workbench",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "description": "浏览器标签工作台与趁手、轻办工具入口",
@@ -10,7 +10,8 @@
     "verify:browser": "node scripts/verify_browser.mjs",
     "catalog": "python3 scripts/build_catalog.py",
     "package": "python3 scripts/package_extension.py",
-    "verify:discard": "node scripts/verify_discard.mjs"
+    "verify:discard": "node scripts/verify_discard.mjs",
+    "verify:bookmarks": "node scripts/verify_bookmarks.mjs"
   },
   "devDependencies": {
     "playwright": "1.59.1"

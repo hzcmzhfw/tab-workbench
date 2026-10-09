@@ -1,3 +1,5 @@
+import { initializeBookmarkBaseline, recordExternalBookmarkChange, withBookmarkSnapshot, readBookmarkHistory, restoreBookmarkTree } from './bookmark-history.js';
+import { validateBookmarkImport } from './bookmark-core.js';
 import { readData } from './storage.js';
 import { toolUrl, safeUrl, validateBackup, mergeBackup } from './core.js';
 import { MENUS } from './menus.js';
@@ -6,6 +8,7 @@ const legacyIdsPromise = fetch(chrome.runtime.getURL('legacy-tool-ids.json')).th
 let mutationQueue = Promise.resolve();
 
 async function updateData(type, payload) {
+  if (type.startsWith('bookmark_')) return updateBookmarks(type, payload);
   const data = await readData();
   switch (type) {
     case 'favorite_toggle': {
@@ -62,6 +65,53 @@ async function updateData(type, payload) {
   await chrome.storage.local.set(data);
   return data;
 }
+async function updateBookmarks(type, payload) {
+  const editable = async id => {
+    const [node] = await chrome.bookmarks.get(id);
+    if (!node?.parentId || node.parentId === '0' || node.unmodifiable) throw new Error('Chrome 系统文件夹或组织管理书签不能修改');
+    return node;
+  };
+  if (type === 'bookmark_create') {
+    if (!payload.title?.trim()) throw new Error('请填写名称');
+    if (payload.url !== undefined && !safeUrl(payload.url)) throw new Error('请输入 HTTP / HTTPS 网址');
+    return withBookmarkSnapshot(`添加${payload.url ? '书签' : '文件夹'}：${payload.title}`, () => chrome.bookmarks.create(payload));
+  }
+  if (type === 'bookmark_update') {
+    const node = await editable(payload.id);
+    if (payload.url !== undefined && !safeUrl(payload.url)) throw new Error('请输入 HTTP / HTTPS 网址');
+    return withBookmarkSnapshot(`编辑：${node.title}`, () => chrome.bookmarks.update(payload.id, { title: payload.title, ...(payload.url !== undefined ? { url: payload.url } : {}) }));
+  }
+  if (type === 'bookmark_move') {
+    const node = await editable(payload.id);
+    return withBookmarkSnapshot(`移动：${node.title}`, () => chrome.bookmarks.move(payload.id, { parentId: payload.parentId }));
+  }
+  if (type === 'bookmark_remove') {
+    const node = await editable(payload.id);
+    if (!node.url && (await chrome.bookmarks.getChildren(node.id)).length) throw new Error('非空文件夹不能直接删除');
+    return withBookmarkSnapshot(`删除：${node.title}`, () => chrome.bookmarks.remove(node.id));
+  }
+  if (type === 'bookmark_import') {
+    const nodes = validateBookmarkImport(payload.children);
+    return withBookmarkSnapshot('导入书签备份', async () => {
+      const container = await chrome.bookmarks.create({ parentId: payload.parentId, title: payload.title });
+      async function add(items, parentId) {
+        for (const node of items) {
+          const created = await chrome.bookmarks.create({ parentId, title: node.title, ...(node.url ? { url: node.url } : {}) });
+          if (node.children) await add(node.children, created.id);
+        }
+      }
+      try { await add(nodes, container.id); return container; }
+      catch (error) { throw new Error(`部分导入失败，已导入内容在“${container.title}”：${error.message}`); }
+    });
+  }
+  if (type === 'bookmark_restore') {
+    const snapshot = (await readBookmarkHistory()).find(item => item.snapshot_id === payload.snapshot_id);
+    if (!snapshot) throw new Error('此快照已被最近 20 次操作替换，请刷新历史列表');
+    return withBookmarkSnapshot(`恢复历史：${snapshot.action_name}`, () => restoreBookmarkTree(snapshot.bookmark_tree));
+  }
+  throw new Error('不支持的书签操作');
+}
+
 export async function createHandoff(payload) {
   if (!toolUrl(payload.target_url)) throw new Error('目标工具网址无效');
   const id = crypto.randomUUID(), key = `handoff_${id}`;
@@ -106,3 +156,18 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 chrome.commands.onCommand.addListener(command => {
   if (command === 'open-workbench') chrome.tabs.create({ url: chrome.runtime.getURL('index.html') }).catch(console.error);
 });
+
+// Chrome-side changes are coalesced; plugin mutations share the same queue and count as one operation.
+if (chrome.bookmarks) {
+  let bookmarkEventTimer;
+  const queueExternal = () => {
+    clearTimeout(bookmarkEventTimer);
+    bookmarkEventTimer = setTimeout(() => {
+      mutationQueue = mutationQueue.catch(() => {}).then(recordExternalBookmarkChange);
+      mutationQueue.catch(console.error);
+    }, 500);
+  };
+  for (const event of [chrome.bookmarks.onCreated, chrome.bookmarks.onRemoved, chrome.bookmarks.onChanged, chrome.bookmarks.onMoved, chrome.bookmarks.onChildrenReordered, chrome.bookmarks.onImportEnded]) event.addListener(queueExternal);
+  mutationQueue = mutationQueue.then(initializeBookmarkBaseline);
+  mutationQueue.catch(console.error);
+}
