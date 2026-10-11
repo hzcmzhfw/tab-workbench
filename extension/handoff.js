@@ -1,4 +1,4 @@
-import { toolUrl, safeUrl } from './core.js';
+import { toolUrl, safeUrl, referralUrl } from './core.js';
 import { readData, mutate } from './storage.js';
 const $ = id => document.getElementById(id);
 const data = await readData();
@@ -17,7 +17,7 @@ async function openTool() {
   const target = $('target').value;
   if (!toolUrl(target)) throw new Error('目标工具不在趁手或轻办目录');
   await mutate('tool_visit', { tool_id: target });
-  await chrome.tabs.create({ url: target });
+  await chrome.tabs.create({ url: referralUrl(target) });
 }
 function action(id, callback) {
   $(id).addEventListener('click', async () => {

@@ -1,6 +1,6 @@
 {
   "name": "tab-workbench",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "type": "module",
   "description": "浏览器标签工作台与趁手、轻办工具入口",

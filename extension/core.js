@@ -126,3 +126,12 @@ export function mergeBackup(current, incoming) {
     })],
   };
 }
+
+// Only predefined campaign labels reach our sites; never include browser content.
+export function referralUrl(value) {
+  if (!toolUrl(value)) return value;
+  const url = new URL(value);
+  url.searchParams.set('utm_source', 'tab_workbench');
+  url.searchParams.set('utm_medium', 'extension');
+  return url.href;
+}

@@ -1,5 +1,5 @@
 import { createBookmarkManager } from './bookmarks.js';
-import { BACKUP_VERSION, duplicateIds, filterTools, safeUrl } from './core.js';
+import { BACKUP_VERSION, duplicateIds, filterTools, safeUrl, referralUrl } from './core.js';
 import { readData, mutate } from './storage.js';
 import { fetchTabs, fetchGroups, snapshots, focusTab, restoreTabs, captureCurrent } from './browser.js';
 
@@ -98,7 +98,7 @@ function row(title, description, badge) {
 }
 async function visit(tool) {
   await update('tool_visit', { tool_id: tool.tool_id });
-  await chrome.tabs.create({ url: tool.tool_url });
+  await chrome.tabs.create({ url: referralUrl(tool.tool_url) });
 }
 function renderTools() {
   let matches = filterTools(catalog, $('search').value, site === '最近' ? '全部' : site, data.favorite_tool_ids);
@@ -109,7 +109,7 @@ function renderTools() {
   for (const tool of shown) {
     const item = row(tool.tool_name, tool.tool_desc, tool.site_name);
     const link = element('a', 'title', tool.tool_name);
-    link.href = tool.tool_url; link.target = '_blank'; link.rel = 'noreferrer';
+    link.href = referralUrl(tool.tool_url); link.target = '_blank'; link.rel = 'noreferrer';
     link.addEventListener('click', event => {
       if (event.button || event.ctrlKey || event.metaKey || event.shiftKey) {
         update('tool_visit', { tool_id: tool.tool_id }).catch(() => {}); return;
@@ -434,7 +434,7 @@ function renderSettings() {
   const privacy = settingsSection('权限与隐私', '标签、收藏和会话保存在当前浏览器。仅在点击插件图标后截图，不自动上传输入、不使用统计或广告脚本。两站页面按正常网站访问加载，遵循各自隐私说明。');
   const links = element('div', 'toolbar');
   for (const [name, url] of [['了解趁手', 'https://tools.hzcmzhfw.cn/'], ['了解轻办', 'https://qingban.hzcmzhfw.cn/'], ['源码与反馈', 'https://gitee.com/hzcmzhfw/tab-workbench']]) {
-    const link = element('a', '', `${name} ↗`); link.href = url; link.target = '_blank'; link.rel = 'noreferrer'; links.append(link);
+    const link = element('a', '', `${name} ↗`); link.href = referralUrl(url); link.target = '_blank'; link.rel = 'noreferrer'; links.append(link);
   }
   privacy.append(links);
 }
