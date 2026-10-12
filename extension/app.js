@@ -10,6 +10,7 @@ let data = await readData();
 let view = 'tabs', site = '全部', preview = false, savedFilter = '待阅读', collection = '全部收藏夹';
 let tabs = [], groups = new Map(), selected = new Set(), visibleTabs = [], visibleSaved = [], closed = [];
 let toastTimer, refreshTimer, bookmarkTimer;
+let discardedOnly = false;
 const bookmarks = createBookmarkManager({ element, button, askText, askConfirm, toast, rerender: render });
 
 function element(tag, className, text) {
@@ -129,7 +130,7 @@ function renderTools() {
 function matchingTabs() {
   const terms = $('search').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const ids = preview ? new Set(duplicateIds(tabs, data.settings_data.is_ignore_tracking)) : null;
-  return tabs.filter(tab => (!ids || ids.has(tab.id)) && terms.every(term => `${tab.title} ${tab.url}`.toLowerCase().includes(term)));
+  return tabs.filter(tab => (!ids || ids.has(tab.id)) && (!discardedOnly || tab.discarded) && terms.every(term => `${tab.title} ${tab.url}`.toLowerCase().includes(term)));
 }
 function tabGroup(tab) {
   if (data.settings_data.tab_view === 'window') return [`window:${tab.windowId}`, `窗口 ${tab.windowId}`];
@@ -143,14 +144,14 @@ function renderTabs() {
   visibleTabs = matchingTabs();
   $('count').textContent = preview
     ? `${visibleTabs.length} 个重复标签待清理 · 固定标签全部保留 · ${data.settings_data.is_ignore_tracking ? '忽略追踪参数' : '完整网址匹配'}`
-    : `${visibleTabs.length} 个网页标签 · 已选择 ${selected.size} 个`;
+    : `${visibleTabs.length} 个${discardedOnly ? '已休眠' : '网页'}标签 · 已选择 ${selected.size} 个 · 分组按数量从多到少`;
   const sections = new Map();
   for (const tab of visibleTabs) {
     const [key, title] = tabGroup(tab);
     if (!sections.has(key)) sections.set(key, { title, tabs: [] });
     sections.get(key).tabs.push(tab);
   }
-  for (const group of sections.values()) {
+  for (const group of [...sections.values()].sort((a, b) => b.tabs.length - a.tabs.length)) {
     const panel = element('section', 'tab-card');
     const heading = element('h2', 'group', `${group.title} · ${group.tabs.length}`);
     heading.append(button('选择本组', () => {
@@ -329,7 +330,7 @@ function renderActions() {
     actions.append(selector([['domain', '按域名'], ['window', '按窗口'], ['group', '按标签组']], data.settings_data.tab_view, async value => {
       await update('settings_update', { tab_view: value }); render();
     }, '标签分组方式'));
-    actions.append(button(preview ? '返回全部标签' : '预览重复标签', async () => { preview = !preview; selected.clear(); await refreshTabs(); render(); }));
+    actions.append(button(preview ? '返回全部标签' : '预览重复标签', async () => { preview = !preview; discardedOnly = false; selected.clear(); await refreshTabs(); render(); }));
     if (preview) {
       actions.append(button('关闭预览重复项', async () => {
         const candidateIds = new Set(duplicateIds(await fetchTabs(), data.settings_data.is_ignore_tracking));
@@ -444,7 +445,21 @@ function render() {
   if ($('overview')) {
     $('overview').hidden = view !== 'tabs';
     $('overview').replaceChildren();
-    for (const text of [`${tabs.length} 个标签`, `${new Set(tabs.map(tab => tab.windowId)).size} 个窗口`, `${duplicateIds(tabs, data.settings_data.is_ignore_tracking).length} 个重复项`, `${tabs.filter(tab => tab.discarded).length} 个已休眠`]) $('overview').append(element('span', '', text));
+    for (const [text, mode, active] of [
+      [`${tabs.length} 个标签`, 'all', !preview && !discardedOnly && data.settings_data.tab_view !== 'window'],
+      [`${new Set(tabs.map(tab => tab.windowId)).size} 个窗口`, 'window', !preview && !discardedOnly && data.settings_data.tab_view === 'window'],
+      [`${duplicateIds(tabs, data.settings_data.is_ignore_tracking).length} 个重复项`, 'duplicates', preview],
+      [`${tabs.filter(tab => tab.discarded).length} 个已休眠`, 'discarded', discardedOnly]
+    ]) {
+      const entry = button(text, async () => {
+        preview = mode === 'duplicates'; discardedOnly = mode === 'discarded';
+        selected.clear(); $('search').value = '';
+        if (mode === 'window' || mode === 'all') await update('settings_update', { tab_view: mode === 'window' ? 'window' : 'domain' });
+        await refreshTabs(); render();
+      }, 'overview-entry');
+      entry.setAttribute('aria-pressed', String(active));
+      $('overview').append(entry);
+    }
   }
   if (view === 'tools') renderTools();
   else if (view === 'tabs') renderTabs();
@@ -463,7 +478,7 @@ function render() {
   }
 }
 async function changeView(next) {
-  view = next; selected.clear(); preview = false; $('search').value = '';
+  view = next; selected.clear(); preview = false; discardedOnly = false; $('search').value = '';
   const headings = { bookmarks: ['BOOKMARKS / CHROME', '书签管理'], tools: ['TOOLS / 趁手与轻办', '工具中心'], tabs: ['WORKSPACE / 浏览工作台', '标签管理'], saved: ['READ LATER / 本地收藏', '稍后再看'], sessions: ['SESSIONS / 工作现场', '工作会话'], settings: ['SETTINGS / 数据管理', '设置与备份'] };
   if ($('eyebrow')) $('eyebrow').textContent = headings[view][0]; if ($('heading')) $('heading').textContent = headings[view][1];
   $('search').placeholder = view === 'bookmarks' ? '搜索所有书签的名称或网址…' : view === 'tools' ? '搜索 JSON、图片压缩、PDF 合并…' : view === 'tabs' ? '搜索标签标题或网址…' : '搜索标题、网址或备注…';
