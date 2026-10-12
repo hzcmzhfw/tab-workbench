@@ -4,7 +4,7 @@
 
 浏览工作台是一款从零开发的 Chromium 浏览器扩展。把标签搜索、稍后再看和工作会话放在一个工作台里，同时连接 **趁手** 与 **轻办**：选中文字、截取网页后，进入对应工具继续处理。
 
-[进入趁手 · 开发工具](https://tools.hzcmzhfw.cn/) ｜ [进入轻办 · 办公与生活工具](https://qingban.hzcmzhfw.cn/) ｜ [两站导航](https://hzcmzhfw.cn/) ｜ [下载 1.2.1 插件 ZIP](releases/tab-workbench-1.2.1.zip)
+[进入趁手 · 开发工具](https://tools.hzcmzhfw.cn/) ｜ [进入轻办 · 办公与生活工具](https://qingban.hzcmzhfw.cn/) ｜ [两站导航](https://hzcmzhfw.cn/) ｜ [下载 1.2.2 插件 ZIP](releases/tab-workbench-1.2.2.zip)
 
 ![浏览工作台标签管理](docs/screenshots/tab-workspace-1.1.png)
 
@@ -25,7 +25,7 @@
 
 ### 方法一：下载插件包
 
-1. 下载 [tab-workbench-1.2.1.zip](releases/tab-workbench-1.2.1.zip)，在电脑上解压。
+1. 下载 [tab-workbench-1.2.2.zip](releases/tab-workbench-1.2.2.zip)，在电脑上解压。
 2. 打开浏览器扩展管理页，开启 **开发者模式**。
 3. 点击 **加载已解压的扩展程序**，选择刚才解压后含 `manifest.json` 的文件夹。
 4. 在浏览器扩展菜单中固定 **浏览工作台**，点击图标开始使用。
@@ -204,7 +204,7 @@ npm run verify:bookmarks
 npm run package
 ```
 
-`dist/tab-workbench-1.2.1.zip` 为打包结果，已发布包在 `releases/`。修改版本时同步更新 Manifest、package.json、README 下载链接，并将新 ZIP 复制到 `releases/`。
+`dist/tab-workbench-1.2.2.zip` 为打包结果，已发布包在 `releases/`。修改版本时同步更新 Manifest、package.json、README 下载链接，并将新 ZIP 复制到 `releases/`。
 
 ```text
 extension/        可直接加载的扩展

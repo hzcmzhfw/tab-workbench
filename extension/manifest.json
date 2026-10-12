@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "minimum_chrome_version": "110",
   "name": "浏览工作台 · 趁手与轻办",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "管理标签与 Chrome 书签、保存工作会话，并连接趁手与轻办开发办公工具。",
   "homepage_url": "https://hzcmzhfw.cn/",
   "permissions": [
