@@ -11,6 +11,7 @@ let view = 'tabs', site = '全部', preview = false, savedFilter = '待阅读', 
 let tabs = [], groups = new Map(), selected = new Set(), visibleTabs = [], visibleSaved = [], closed = [];
 let toastTimer, refreshTimer, bookmarkTimer;
 let discardedOnly = false;
+const collapsedGroups = new Set(), expandedGroups = new Set();
 const bookmarks = createBookmarkManager({ element, button, askText, askConfirm, toast, rerender: render });
 
 function element(tag, className, text) {
@@ -140,6 +141,14 @@ function tabGroup(tab) {
   }
   return [new URL(tab.url).hostname, new URL(tab.url).hostname];
 }
+// Span only the height each card needs, so later cards fill shorter columns.
+const cardResizeObserver = new ResizeObserver(entries => {
+  for (const { target } of entries) {
+    if (!target.isConnected || isPopup) continue;
+    const height = target.getBoundingClientRect().height;
+    target.style.gridRowEnd = `span ${Math.ceil((height + 18) / 19)}`;
+  }
+});
 function renderTabs() {
   visibleTabs = matchingTabs();
   $('count').textContent = preview
@@ -151,16 +160,29 @@ function renderTabs() {
     if (!sections.has(key)) sections.set(key, { title, tabs: [] });
     sections.get(key).tabs.push(tab);
   }
-  for (const group of [...sections.values()].sort((a, b) => b.tabs.length - a.tabs.length)) {
+  for (const [key, group] of [...sections.entries()].sort((a, b) => b[1].tabs.length - a[1].tabs.length)) {
     const panel = element('section', 'tab-card');
-    const heading = element('h2', 'group', `${group.title} · ${group.tabs.length}`);
+    const searching = !!$('search').value.trim();
+    const collapsed = isPopup && !searching && collapsedGroups.has(key);
+    const expanded = !isPopup || searching || expandedGroups.has(key);
+    const heading = element('h2', 'group', isPopup ? undefined : `${group.title} · ${group.tabs.length}`);
+    if (isPopup) {
+      const toggle = button(`${group.title} · ${group.tabs.length}`, () => {
+        if (collapsedGroups.has(key)) collapsedGroups.delete(key); else collapsedGroups.add(key);
+        render();
+      }, 'card-toggle');
+      toggle.setAttribute('aria-expanded', String(!collapsed));
+      toggle.disabled = searching;
+      heading.append(toggle);
+    }
     heading.append(button('选择本组', () => {
       const all = group.tabs.every(tab => selected.has(tab.id));
       for (const tab of group.tabs) { if (all) selected.delete(tab.id); else selected.add(tab.id); }
       render();
     }, 'group-select'));
     panel.append(heading); $('list').append(panel);
-    for (const tab of group.tabs) {
+    if (!isPopup) cardResizeObserver.observe(panel);
+    for (const tab of (collapsed ? [] : expanded ? group.tabs : group.tabs.slice(0, 3))) {
       const labels = [tab.pinned ? '已固定' : '', tab.active ? '活动标签' : '', tab.discarded ? '已休眠' : '', tab.audible ? '正在播放声音' : ''].filter(Boolean);
       const item = row(tab.title || tab.url, `${new URL(tab.url).hostname} · ${labels.join(' / ') || '点击标题切换标签'}`, new URL(tab.url).hostname.slice(0, 1).toUpperCase());
       item.node.classList.toggle('selected', selected.has(tab.id));
@@ -176,6 +198,12 @@ function renderTabs() {
       item.actions.append(button('稍后看', () => saveLater([tab], false)));
       item.actions.append(button('关闭', () => closeTabs([tab]), 'danger'));
       item.node.append(item.actions); panel.append(item.node);
+    }
+    if (isPopup && !collapsed && !searching && group.tabs.length > 3) {
+      panel.append(button(expanded ? '收起至 3 个标签' : `展开其余 ${group.tabs.length - 3} 个`, () => {
+        if (expandedGroups.has(key)) expandedGroups.delete(key); else expandedGroups.add(key);
+        render();
+      }, 'card-more'));
     }
   }
 }
@@ -440,6 +468,7 @@ function renderSettings() {
   privacy.append(links);
 }
 function render() {
+  cardResizeObserver.disconnect();
   applyTheme(); $('list').replaceChildren();
   document.body.dataset.view = view;
   if ($('overview')) {
